@@ -1,47 +1,95 @@
-# 🧠 Memora
+# 🧠 Memora – Where Real Humans Preserve Real Memories
 
-Memora is a minimal Web3-powered app that lets users turn their videos into 3D moments and store them permanently on Filecoin. It uses World App's MiniKit to verify real users and ensure each memory is uniquely tied to a human identity.
-
----
-
-## 🔧 What It Does
-
-- 📹 Upload a short 2D video  
-- 🧠 (Offline) convert to a 3D Gaussian Splat  
-- 🔐 Authenticate with World App (MiniKit)  
-- 📦 Store the 3D output on Filecoin via Lighthouse  
-- 🪪 Link upload to verified user (World ID + wallet)  
-- 🔍 Log Filecoin storage on-chain and track it via Blockscout SDK  
+**Memora** is a minimalist Web3 app for creating verifiable, permanent digital memories.  
+Each memory is tied to a real person (via World App), stored forever (via Filecoin), and publicly tracked (via Blockscout).  
+No hype, just permanence.
 
 ---
 
-## 🛠 Tech
+## 📸 What It Does
 
-- Next.js frontend  
-- Lighthouse SDK for Filecoin storage  
-- Worldcoin MiniKit SDK for authentication  
-- Blockscout SDK for live transaction feedback  
-- Simple Node.js API for uploads  
-
----
-
-## ✅ Bounty Tracks
-
-**Protocol Labs**  
-→ Uses Filecoin (via Lighthouse) for decentralized storage of user-submitted content.
-
-**World App Mini App**  
-→ Uses MiniKit SDK and World ID to verify real users and associate each memory with a unique human.
-
-**Blockscout**  
-→ Integrates the Blockscout SDK to give users real-time feedback when their Filecoin storage record is logged on-chain.  
-→ Also uses Blockscout as the default explorer for transaction links.  
-→ Eligible for:
-  - ✅ Best Blockscout SDK Integration ($3,000)
-  - ✅ Blockscout Explorer Pool Prize ($10,000 shared)
+- 📹 Upload a short personal video
+- 🔐 Authenticate with World App (proves you’re human)
+- 🧠 (Offline) convert to a 3D Gaussian Splat (optional)
+- 📦 Upload the output to Filecoin (via Lighthouse)
+- 🪪 Link each memory to your World ID & wallet
+- 🔍 Log the memory on-chain and show TX status with Blockscout SDK
 
 ---
 
-## 📜 License
+## 🎯 Why It Matters
 
-MIT
+In a world of AI spam, fake users, and disappearing platforms, Memora offers a simple, human promise:
+
+> **This moment was real. I was there. And it’s stored forever.**
+
+We preserve not just data — but context, identity, and memory.
+
+---
+
+## 🛠 Tech Stack (MVP)
+
+- ✅ **Next.js** frontend
+- ✅ `@worldcoin/minikit` → verify real users
+- ✅ `@lighthouse-web3/sdk` → store on Filecoin
+- ✅ `@blockscout/sdk` → show TX status (CID logging)
+- ✅ Simple Solidity contract → logs memory CIDs
+
+---
+
+## 🚀 Hackathon Challenge Integrations
+
+### 🌍 World App – **Best Mini App** ($10K)
+
+- Uses `getUser()` from MiniKit to verify real humans
+- Links each memory to a **World ID + wallet**
+- Validates proof in the backend
+- Can run fully inside World App as a Mini App
+
+✅ Qualifies fully
+
+---
+
+### 📁 Protocol Labs – **Filecoin Fair Data Economy** ($5K)
+
+- Stores content using Lighthouse → real Filecoin storage deals
+- Links Filecoin CID to **human-authenticated identity**
+- Promotes transparent, verifiable, and user-owned memories
+
+✅ Qualifies fully
+
+---
+
+### 🔍 Blockscout – **SDK & Explorer Challenge** ($6K + $10K Pool)
+
+- Logs Filecoin CID on-chain with a simple contract
+- Uses Blockscout SDK to show **real-time TX feedback**
+- All explorer links route to Blockscout
+
+✅ Qualifies for:
+- SDK prize
+- Explorer pool
+- Potential merits use (future stretch)
+
+---
+
+## 🏗 Project Structure
+
+```
+/pages
+    upload.tsx ← Upload UI + World ID auth
+/api
+    upload.ts ← Filecoin upload endpoint
+/lib
+    world.ts ← MiniKit integration
+    blockscout.ts ← TX watcher helper
+/contracts
+    StorageLogger.sol ← CID logger (deployed to World Chain)
+```
+
+
+
+---
+
+
+> **Memora** – Your memory. Your proof. Forever.
