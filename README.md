@@ -20,3 +20,9 @@ Memora is a minimal Web3-powered app that lets users turn their videos into 3D m
 - Lighthouse SDK for Filecoin storage
 - Worldcoin MiniKit SDK for authentication
 - Simple Node.js API for uploads
+
+## ✅ Bounty Tracks
+
+**Protocol Labs**: uses Filecoin for permanent storage
+
+**World App Mini App**: uses MiniKit + World ID for user auth
