@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
-import { X, Maximize2, RotateCcw, Info } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Maximize2, RotateCcw, Info, MessageCircle } from 'lucide-react'
+import VoiceAI from './VoiceAI'
 
 interface LumaSplatsViewerProps {
   isOpen: boolean
@@ -26,6 +27,7 @@ export default function LumaSplatsViewer({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showInfo, setShowInfo] = useState(false)
+  const [showAI, setShowAI] = useState(false)
   const sceneRef = useRef<any>(null)
 
   useEffect(() => {
@@ -357,6 +359,16 @@ export default function LumaSplatsViewer({
               </button>
               
               <button
+                onClick={() => setShowAI(!showAI)}
+                className={`p-2 hover:bg-white/10 rounded-lg transition-colors ${
+                  showAI ? 'bg-blue-500/20 text-blue-400' : ''
+                }`}
+                title="Voice AI Assistant"
+              >
+                <MessageCircle className="h-5 w-5 text-white" />
+              </button>
+              
+              <button
                 onClick={resetCamera}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                 title="Reset View"
@@ -464,6 +476,15 @@ export default function LumaSplatsViewer({
           </motion.div>
         )}
       </div>
+
+      {/* Voice AI Assistant */}
+      <VoiceAI
+        memoryName={memoryName}
+        memoryDescription={memoryDescription}
+        isOwned={isOwned}
+        isActive={showAI}
+        onToggle={() => setShowAI(false)}
+      />
     </motion.div>
   )
 } 
