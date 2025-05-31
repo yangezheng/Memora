@@ -24,7 +24,7 @@ Memora lets users:
 1. Visit Memora
 2. Log in with World ID (via MiniKit)
 3. Upload video + journal description
-4. (Optional) Scene is reconstructed as 3D Gaussian Splat
+4. Scene is reconstructed as 3D Gaussian Splat
 5. Bundle is stored on Filecoin (via Lighthouse)
 6. CID is logged on-chain via smart contract
 7. User can revisit the memory or query it with AI later
@@ -40,7 +40,7 @@ Memora lets users:
 | On-chain    | World Chain + Blockscout SDK       |
 | Frontend    | Next.js, Node.js                   |
 | Scene Gen   | Gaussian Splatting (offline)       |
-| AI (future) | RAG over embedded journal metadata |
+| AI          | RAG over embedded journal metadata |
 
 ---
 
