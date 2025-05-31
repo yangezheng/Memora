@@ -32,6 +32,23 @@ When you connect your wallet to the Memora frontend, you'll experience:
 - **Fallback System**: Graceful degradation to Three.js if LumaSplats fails to load
 - **Responsive Controls**: Fullscreen, camera reset, info panels
 
+### 📊 Blockscout Integration
+The frontend integrates the [Blockscout SDK](https://docs.blockscout.com/devs/blockscout-sdk) for comprehensive blockchain explorer functionality:
+
+- **🔔 Transaction Notifications**: Real-time toast notifications for transaction status
+- **📜 Transaction History**: Interactive popup showing wallet transaction history
+- **🔗 Explorer Links**: Direct links to Blockscout explorer for transactions and addresses
+- **🌐 API Integration**: Uses Blockscout's `/tokens/{address_hash}/instances` endpoint to fetch real NFT data
+- **⛓️ Multi-chain Support**: Configured for Ethereum Sepolia testnet with automatic network switching
+- **💫 Real-time Updates**: Live transaction status tracking and blockchain data synchronization
+
+#### Blockscout Features Implemented:
+- **NFT Data Fetching**: Automatically loads real NFT instances from deployed contracts
+- **Transaction Toast Notifications**: Shows pending, success, and error states with detailed info
+- **Wallet Transaction History**: Browse recent transactions with status indicators and explorer links
+- **Smart Network Handling**: Auto-switches to Sepolia and adds network if not present
+- **Explorer Integration**: All transaction hashes link directly to Blockscout Sepolia explorer
+
 ---
 
 ## 🛠 Tech Stack

@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Eye, Heart, ExternalLink, Filter, Search, Grid, List, Lock, Crown } from 'lucide-react'
+import { Sparkles, Eye, Heart, ExternalLink, Filter, Search, Grid, List, Lock, Crown, History, Loader } from 'lucide-react'
+import { useNotification, useTransactionPopup } from '@blockscout/app-sdk'
 import LumaSplatsViewer from './LumaSplatsViewer'
 import { ethers } from 'ethers'
+import { fetchNFTInstances, convertNFTToMemory, getBlockscoutURL, formatAddress as formatAddr, getChainId } from '../lib/blockscout'
+import { toast } from 'react-hot-toast'
 
 interface Memory {
   id: string
@@ -21,6 +24,9 @@ interface Memory {
   thumbnail: string
   lumaUrl?: string // Luma capture URL for 3D viewing
 }
+
+// Example NFT contract address - replace with actual Memora contract address
+const MEMORA_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MEMORA_CONTRACT_ADDRESS || '0x1234567890123456789012345678901234567890'
 
 const SAMPLE_MEMORIES: Memory[] = [
   {
@@ -80,20 +86,57 @@ export default function MemoryGallery() {
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null)
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null)
   const [is3DViewerOpen, setIs3DViewerOpen] = useState(false)
+  const [isLoadingNFTs, setIsLoadingNFTs] = useState(false)
+  const [useBlockchainData, setUseBlockchainData] = useState(false)
+
+  // Blockscout SDK hooks
+  const { openTxToast } = useNotification()
+  const { openPopup } = useTransactionPopup()
+
+  // Load NFT data from Blockscout API
+  const loadNFTsFromBlockchain = async () => {
+    setIsLoadingNFTs(true)
+    try {
+      const nftInstances = await fetchNFTInstances(MEMORA_CONTRACT_ADDRESS)
+      
+      if (nftInstances.length > 0) {
+        const convertedMemories = nftInstances.map(convertNFTToMemory)
+        setMemories(convertedMemories)
+        setUseBlockchainData(true)
+        toast.success(`Loaded ${convertedMemories.length} memories from blockchain!`)
+      } else {
+        toast.error('No NFTs found for this contract. Using sample data.')
+        // Fallback to sample data
+        initializeSampleMemories()
+      }
+    } catch (error) {
+      console.error('Failed to load NFTs from blockchain:', error)
+      toast.error('Failed to load blockchain data. Using sample data.')
+      // Fallback to sample data
+      initializeSampleMemories()
+    }
+    setIsLoadingNFTs(false)
+  }
 
   // Initialize memories with connected wallet as owner of first memory for demo
-  useEffect(() => {
-    const initializeMemories = () => {
-      const memoriesWithOwnership = SAMPLE_MEMORIES.map(memory => ({
-        ...memory,
-        owner: memory.owner === 'USER_WALLET' && connectedAddress 
-          ? connectedAddress 
-          : memory.owner
-      }))
-      setMemories(memoriesWithOwnership)
-    }
+  const initializeSampleMemories = () => {
+    const memoriesWithOwnership = SAMPLE_MEMORIES.map(memory => ({
+      ...memory,
+      owner: memory.owner === 'USER_WALLET' && connectedAddress 
+        ? connectedAddress 
+        : memory.owner
+    }))
+    setMemories(memoriesWithOwnership)
+    setUseBlockchainData(false)
+  }
 
-    initializeMemories()
+  useEffect(() => {
+    if (connectedAddress) {
+      // Try to load real NFT data first
+      loadNFTsFromBlockchain()
+    } else {
+      initializeSampleMemories()
+    }
   }, [connectedAddress])
 
   // Check wallet connection
@@ -169,7 +212,7 @@ export default function MemoryGallery() {
   }, [memories, searchTerm, selectedEmotion, sortBy])
 
   const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+    return formatAddr(address)
   }
 
   const isOwner = (memory: Memory) => {
@@ -196,6 +239,35 @@ export default function MemoryGallery() {
     setIs3DViewerOpen(true)
   }
 
+  // Show transaction history using Blockscout SDK
+  const showTransactionHistory = () => {
+    if (connectedAddress) {
+      openPopup({
+        chainId: getChainId(), // Sepolia chain ID
+        address: connectedAddress,
+      })
+    } else {
+      toast.error('Please connect your wallet first')
+    }
+  }
+
+  // Simulate transaction notification
+  const simulateTransaction = async () => {
+    if (!connectedAddress) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    try {
+      // Example transaction hash - replace with real transaction
+      const txHash = '0x1234567890123456789012345678901234567890123456789012345678901234'
+      await openTxToast(getChainId(), txHash) // Sepolia chain ID
+    } catch (error) {
+      console.error('Error showing transaction toast:', error)
+      toast.error('Failed to show transaction notification')
+    }
+  }
+
   const emotions = ['all', 'Happy', 'Excited', 'Peaceful', 'Nostalgic', 'Inspired', 'Grateful', 'Adventurous']
 
   return (
@@ -214,19 +286,56 @@ export default function MemoryGallery() {
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Explore 3D memories created by the community. Each memory is a unique NFT stored on IPFS.
           </p>
+          
           {connectedAddress && (
             <div className="mt-6 p-4 glass rounded-lg max-w-4xl mx-auto">
               <p className="text-sm text-green-400 mb-2">
                 ✅ Connected as {formatAddress(connectedAddress)}
               </p>
               <div className="text-sm text-gray-300 space-y-1">
-                <p>🎉 <strong>Demo Mode:</strong> The first memory (Zion National Park) is now owned by your wallet!</p>
+                {useBlockchainData ? (
+                  <>
+                    <p>🔗 <strong>Live Blockchain Data:</strong> Displaying real NFTs from Ethereum Sepolia!</p>
+                    <p>📊 <strong>Blockscout Integration:</strong> Real-time transaction notifications and explorer links</p>
+                  </>
+                ) : (
+                  <>
+                    <p>🎉 <strong>Demo Mode:</strong> The first memory (Zion National Park) is now owned by your wallet!</p>
+                    <p>💡 <strong>Deploy Contract:</strong> Deploy Memora NFT contract to see real blockchain data</p>
+                  </>
+                )}
                 <p>👑 <strong>Owned memories</strong> show a crown icon and "OWNED" badge</p>
                 <p>🔒 <strong>Other memories</strong> show a lock icon (preview mode only)</p>
                 <p>🌟 <strong>Click any memory</strong> to view it in 3D - owners get full access, others get preview</p>
               </div>
+              
+              {/* Blockscout SDK Demo Buttons */}
+              <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                <button
+                  onClick={showTransactionHistory}
+                  className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-xs flex items-center space-x-1"
+                >
+                  <History className="h-3 w-3" />
+                  <span>Transaction History</span>
+                </button>
+                <button
+                  onClick={simulateTransaction}
+                  className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors text-xs"
+                >
+                  Demo TX Notification
+                </button>
+                <button
+                  onClick={loadNFTsFromBlockchain}
+                  disabled={isLoadingNFTs}
+                  className="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-xs flex items-center space-x-1 disabled:opacity-50"
+                >
+                  {isLoadingNFTs ? <Loader className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
+                  <span>Reload NFTs</span>
+                </button>
+              </div>
             </div>
           )}
+          
           {!connectedAddress && (
             <div className="mt-6 p-4 bg-orange-500/20 border border-orange-500/30 rounded-lg max-w-2xl mx-auto">
               <p className="text-orange-400 text-sm mb-2">
@@ -234,6 +343,7 @@ export default function MemoryGallery() {
               </p>
               <p className="text-gray-300 text-xs">
                 When connected, you'll own the first memory as a demo and can see the difference between owned vs. non-owned NFT experiences.
+                We'll also try to load real NFT data from the blockchain using the Blockscout API.
               </p>
             </div>
           )}
@@ -478,10 +588,10 @@ export default function MemoryGallery() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        window.open(`https://sepolia.blockscout.com/tx/${memory.txHash}`, '_blank')
+                        window.open(getBlockscoutURL(`tx/${memory.txHash}`), '_blank')
                       }}
                       className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                      title="View on Blockscout"
+                      title="View on Blockscout Explorer"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </button>
