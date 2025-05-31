@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test LumaSplats - Memora</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h3>🧠 Memora - LumaSplats Test</h3>
+        <p><strong>Scene:</strong> Zion National Park</p>
+        <p><strong>URL:</strong> https://lumalabs.ai/capture/089bc8d0-23e0-4ef7-8a72-d028d0dd86ab</p>
+        <p><strong>Status:</strong> <span id="status">Loading...</span></p>
+    </div>
+    
+    <div class="loading" id="loading">
+        <div style="font-size: 24px; margin-bottom: 10px;">🔄</div>
+        <div>Loading 3D Scene...</div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/",
+            "@lumaai/luma-web": "https://unpkg.com/@lumaai/luma-web@0.2.0/dist/library/luma-web.module.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { WebGLRenderer, PerspectiveCamera, Scene, Color, FogExp2 } from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { LumaSplatsThree } from '@lumaai/luma-web';
+
+        const statusEl = document.getElementById('status');
+        const loadingEl = document.getElementById('loading');
+        const canvas = document.getElementById('canvas');
+
+        function updateStatus(message, isError = false) {
+            statusEl.textContent = message;
+            statusEl.style.color = isError ? '#ff6b6b' : '#4ecdc4';
+            console.log(isError ? '❌' : '✅', message);
+        }
+
+        async function initScene() {
+            try {
+                updateStatus('Setting up renderer...');
+                
+                // Set up WebGL renderer exactly like working HTML
+                const renderer = new WebGLRenderer({
+                    canvas: canvas,
+                    antialias: false
+                });
+
+                renderer.setSize(window.innerWidth, window.innerHeight, false);
+
+                const scene = new Scene();
+                renderer.setClearColor(new Color(0xffd1a4).convertLinearToSRGB());
+
+                // Set up fog exactly like working HTML
+                scene.fog = new FogExp2(
+                    new Color(0xffd1a4).convertLinearToSRGB(),
+                    0.18
+                );
+                scene.background = scene.fog.color;
+
+                updateStatus('Setting up camera...');
+
+                // Set up camera exactly like working HTML
+                const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.z = -1.0;
+                camera.position.y = 1.5;
+                camera.position.x = 0.9;
+
+                // Set up controls
+                const controls = new OrbitControls(camera, canvas);
+                controls.enableDamping = true;
+
+                updateStatus('Loading Gaussian splat...');
+
+                // Create LumaSplats object with YOUR scene
+                const splat = new LumaSplatsThree({
+                    source: 'https://lumalabs.ai/capture/089bc8d0-23e0-4ef7-8a72-d028d0dd86ab'
+                });
+
+                scene.add(splat);
+
+                updateStatus('Scene loaded successfully! 🎉');
+                loadingEl.style.display = 'none';
+
+                // Animation loop exactly like working HTML
+                function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+
+                animate();
+
+                // Handle resize
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight, false);
+                });
+
+            } catch (error) {
+                console.error('Scene loading failed:', error);
+                updateStatus(`Error: ${error.message}`, true);
+                loadingEl.innerHTML = `
+                    <div style="color: #ff6b6b;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">❌</div>
+                        <div>Failed to load scene</div>
+                        <div style="font-size: 12px; margin-top: 10px;">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Start loading
+        initScene();
+    </script>
+</body>
+</html> 

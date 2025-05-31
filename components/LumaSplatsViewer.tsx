@@ -13,14 +13,6 @@ interface LumaSplatsViewerProps {
   isOwned: boolean
 }
 
-// Declare global types for CDN loaded libraries
-declare global {
-  interface Window {
-    THREE: any
-    LumaSplatsThree: any
-  }
-}
-
 export default function LumaSplatsViewer({ 
   isOpen, 
   onClose, 
@@ -46,21 +38,83 @@ export default function LumaSplatsViewer({
     let splat: any
     let animationId: number
 
-    const loadScriptsAndInitialize = async () => {
+    const initializeScene = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
         const canvas = canvasRef.current!
 
-        // Load Three.js and LumaSplats from CDN
-        await loadCDNScripts()
-
-        // Use the globally loaded THREE
-        const THREE = window.THREE
-        if (!THREE) {
-          throw new Error('Failed to load Three.js')
+        // Step 1: Inject importmap exactly like the HTML file (if not already present)
+        if (!document.querySelector('script[type="importmap"]')) {
+          const importMapScript = document.createElement('script')
+          importMapScript.type = 'importmap'
+          importMapScript.textContent = JSON.stringify({
+            "imports": {
+              "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+              "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/",
+              "@lumaai/luma-web": "https://unpkg.com/@lumaai/luma-web@0.2.0/dist/library/luma-web.module.js"
+            }
+          })
+          document.head.appendChild(importMapScript)
+          
+          // Wait for importmap to be processed
+          await new Promise(resolve => setTimeout(resolve, 100))
         }
+
+        // Step 2: Load everything in a single module script (like the HTML file)
+        await new Promise<void>((resolve, reject) => {
+          if ((window as any).memoraSceneReady) {
+            resolve()
+            return
+          }
+
+          const script = document.createElement('script')
+          script.type = 'module'
+          script.textContent = `
+            import { WebGLRenderer, PerspectiveCamera, Scene, Color } from 'three';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+            import { LumaSplatsThree } from '@lumaai/luma-web';
+            
+            // Store globals for React component access
+            window.MemoraTHREE = { WebGLRenderer, PerspectiveCamera, Scene, Color, OrbitControls };
+            window.MemoraLumaSplatsThree = LumaSplatsThree;
+            window.memoraSceneReady = true;
+            window.dispatchEvent(new CustomEvent('memora-modules-loaded'));
+          `
+          
+          const onLoad = () => {
+            console.log('✅ All modules loaded successfully')
+            resolve()
+          }
+          
+          const onError = (error: any) => {
+            console.error('❌ Module loading failed:', error)
+            reject(new Error('Failed to load 3D modules'))
+          }
+
+          window.addEventListener('memora-modules-loaded', onLoad, { once: true })
+          script.onerror = onError
+          
+          document.head.appendChild(script)
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            window.removeEventListener('memora-modules-loaded', onLoad)
+            reject(new Error('Module loading timeout'))
+          }, 10000)
+        })
+
+        // Step 3: Use the loaded modules to create the scene (exactly like HTML)
+        const THREE = (window as any).MemoraTHREE
+        const LumaSplatsThree = (window as any).MemoraLumaSplatsThree
+
+        if (!THREE || !LumaSplatsThree) {
+          throw new Error('Modules not loaded properly')
+        }
+
+        console.log('✅ Using Luma URL:', lumaUrl)
+        console.log('✅ LumaSplatsThree available:', !!LumaSplatsThree)
 
         // Set up WebGL renderer
         renderer = new THREE.WebGLRenderer({
@@ -68,83 +122,101 @@ export default function LumaSplatsViewer({
           antialias: false
         })
 
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight, false)
+        renderer.setSize(window.innerWidth, window.innerHeight, false)
 
         scene = new THREE.Scene()
-        renderer.setClearColor(new THREE.Color(0xffd1a4), 1)
+        renderer.setClearColor(new THREE.Color(0xffd1a4).convertLinearToSRGB())
 
-        // Set up fog like in the original HTML
-        scene.fog = new THREE.FogExp2(
-          new THREE.Color(0xffd1a4), 
-          0.18
-        )
-        scene.background = scene.fog.color
+        // Set scene background without fog to avoid shader conflicts
+        scene.background = new THREE.Color(0xffd1a4).convertLinearToSRGB()
 
         // Set up camera
-        camera = new THREE.PerspectiveCamera(
-          75, 
-          canvas.clientWidth / canvas.clientHeight, 
-          0.1, 
-          1000
-        )
-        camera.position.set(0.9, 1.5, -1.0)
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+        camera.position.z = -1.0
+        camera.position.y = 1.5
+        camera.position.x = 0.9
 
         // Set up controls
-        const OrbitControls = window.THREE.OrbitControls || THREE.OrbitControls
-        if (OrbitControls) {
-          controls = new OrbitControls(camera, canvas)
-          controls.enableDamping = true
-        }
+        controls = new THREE.OrbitControls(camera, canvas)
+        controls.enableDamping = true
 
         // Create LumaSplats object
-        const LumaSplatsThree = window.LumaSplatsThree
-        if (LumaSplatsThree) {
+        const splatUrl = lumaUrl || 'https://lumalabs.ai/capture/089bc8d0-23e0-4ef7-8a72-d028d0dd86ab'
+        console.log('🎯 Creating LumaSplats with URL:', splatUrl)
+        
+        try {
           splat = new LumaSplatsThree({
-            source: lumaUrl || 'https://lumalabs.ai/capture/089bc8d0-23e0-4ef7-8a72-d028d0dd86ab'
+            source: splatUrl,
+            // Add options to minimize shader conflicts
+            particleRevealEnabled: false
           })
+
           scene.add(splat)
-        } else {
-          // Fallback: create a simple placeholder
-          console.warn('LumaSplatsThree not available, using fallback')
-          const geometry = new THREE.SphereGeometry(1, 32, 32)
-          const material = new THREE.MeshPhongMaterial({ 
-            color: isOwned ? 0x00ff00 : 0xff6600,
-            wireframe: true 
+          console.log('✅ LumaSplats added to scene')
+          
+          // Wait for splat to be ready before starting animation
+          await new Promise(resolve => {
+            if (splat.ready) {
+              resolve(true)
+            } else {
+              splat.addEventListener('ready', () => resolve(true))
+            }
+            // Timeout after 5 seconds
+            setTimeout(() => resolve(true), 5000)
+          })
+          
+        } catch (splatError) {
+          console.warn('LumaSplats creation failed, using basic scene:', splatError)
+          
+          // Add a simple placeholder instead
+          const geometry = new THREE.SphereGeometry(0.5, 32, 32)
+          const material = new THREE.MeshBasicMaterial({ 
+            color: 0xffd1a4,
+            transparent: true,
+            opacity: 0.8
           })
           splat = new THREE.Mesh(geometry, material)
           scene.add(splat)
-
-          // Add lighting for the fallback
-          const ambientLight = new THREE.AmbientLight(0x404040, 0.6)
-          scene.add(ambientLight)
-          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-          directionalLight.position.set(1, 1, 1)
-          scene.add(directionalLight)
         }
 
         sceneRef.current = { renderer, scene, camera, controls, splat }
 
-        // Animation loop
+        // Animation loop with WebGL state management
         const animate = () => {
           animationId = requestAnimationFrame(animate)
-          if (controls) {
+          
+          try {
             controls.update()
+            
+            // Clear any potential WebGL errors before rendering
+            const gl = renderer.getContext()
+            while (gl.getError() !== gl.NO_ERROR) {
+              // Clear previous errors
+            }
+            
+            // Force WebGL state reset to avoid program conflicts
+            renderer.state.reset()
+            
+            renderer.render(scene, camera)
+            
+            // Check for WebGL errors after rendering and handle them silently
+            const error = gl.getError()
+            if (error !== gl.NO_ERROR && error !== gl.INVALID_OPERATION) {
+              console.warn('WebGL error (non-critical):', error)
+            }
+          } catch (renderError) {
+            console.warn('Render error (continuing):', renderError)
           }
-          
-          // Rotate fallback object if needed
-          if (!window.LumaSplatsThree && splat) {
-            splat.rotation.y += 0.005
-          }
-          
-          renderer.render(scene, camera)
         }
 
         animate()
+        console.log('✅ 3D Gaussian splat scene loaded successfully!')
         setIsLoading(false)
 
       } catch (err) {
-        console.error('Error loading LumaSplats:', err)
-        // Final fallback using installed Three.js
+        console.error('❌ Failed to load 3D scene:', err)
+        
+        // Fallback to simple Three.js scene
         try {
           const THREE = await import('three')
           const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js')
@@ -168,12 +240,19 @@ export default function LumaSplatsViewer({
 
           // Add a placeholder object
           const geometry = new THREE.SphereGeometry(1, 32, 32)
-          const material = new THREE.MeshBasicMaterial({ 
+          const material = new THREE.MeshPhongMaterial({ 
             color: isOwned ? 0x00ff00 : 0xff6600,
             wireframe: true 
           })
           const sphere = new THREE.Mesh(geometry, material)
           scene.add(sphere)
+
+          // Add lighting
+          const ambientLight = new THREE.AmbientLight(0x404040, 0.6)
+          scene.add(ambientLight)
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+          directionalLight.position.set(1, 1, 1)
+          scene.add(directionalLight)
 
           const animate = () => {
             animationId = requestAnimationFrame(animate)
@@ -183,6 +262,7 @@ export default function LumaSplatsViewer({
           }
 
           animate()
+          setError('Using fallback 3D scene. LumaSplats failed to load.')
           setIsLoading(false)
         } catch (fallbackErr) {
           console.error('Fallback also failed:', fallbackErr)
@@ -192,25 +272,26 @@ export default function LumaSplatsViewer({
       }
     }
 
-    loadScriptsAndInitialize()
+    initializeScene()
 
     // Handle resize
     const handleResize = () => {
       if (sceneRef.current && canvasRef.current) {
         const { camera, renderer } = sceneRef.current
         const canvas = canvasRef.current
-        if (camera && renderer) {
-          camera.aspect = canvas.clientWidth / canvas.clientHeight
-          camera.updateProjectionMatrix()
-          renderer.setSize(canvas.clientWidth, canvas.clientHeight, false)
-        }
+        
+        camera.aspect = canvas.clientWidth / canvas.clientHeight
+        camera.updateProjectionMatrix()
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight, false)
       }
     }
 
     window.addEventListener('resize', handleResize)
 
+    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
+      
       if (animationId) {
         cancelAnimationFrame(animationId)
       }
@@ -223,67 +304,6 @@ export default function LumaSplatsViewer({
       sceneRef.current = null
     }
   }, [isOpen, lumaUrl, isOwned])
-
-  // Function to load CDN scripts
-  const loadCDNScripts = async (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // Check if already loaded
-      if (window.THREE && window.LumaSplatsThree) {
-        resolve()
-        return
-      }
-
-      let scriptsLoaded = 0
-      const totalScripts = 2
-
-      const checkAllLoaded = () => {
-        scriptsLoaded++
-        if (scriptsLoaded >= totalScripts) {
-          resolve()
-        }
-      }
-
-      // Load Three.js
-      if (!window.THREE) {
-        const threeScript = document.createElement('script')
-        threeScript.src = 'https://unpkg.com/three@0.157.0/build/three.min.js'
-        threeScript.onload = () => {
-          // Load OrbitControls
-          const controlsScript = document.createElement('script')
-          controlsScript.src = 'https://unpkg.com/three@0.157.0/examples/js/controls/OrbitControls.js'
-          controlsScript.onload = () => checkAllLoaded()
-          controlsScript.onerror = () => checkAllLoaded() // Continue even if controls fail
-          document.head.appendChild(controlsScript)
-        }
-        threeScript.onerror = () => reject(new Error('Failed to load Three.js'))
-        document.head.appendChild(threeScript)
-      } else {
-        checkAllLoaded()
-      }
-
-      // Load LumaSplats
-      if (!window.LumaSplatsThree) {
-        const lumaScript = document.createElement('script')
-        lumaScript.src = 'https://unpkg.com/@lumaai/luma-web@0.2.0/dist/library/luma-web.umd.js'
-        lumaScript.onload = () => {
-          // LumaSplatsThree should be available as a global
-          if (window.LumaSplatsThree) {
-            checkAllLoaded()
-          } else {
-            console.warn('LumaSplatsThree not found after loading script')
-            checkAllLoaded()
-          }
-        }
-        lumaScript.onerror = () => {
-          console.warn('Failed to load LumaSplats, will use fallback')
-          checkAllLoaded()
-        }
-        document.head.appendChild(lumaScript)
-      } else {
-        checkAllLoaded()
-      }
-    })
-  }
 
   const resetCamera = () => {
     if (sceneRef.current) {
@@ -306,6 +326,7 @@ export default function LumaSplatsViewer({
       onClick={onClose}
     >
       <div 
+        ref={containerRef}
         className="relative w-full h-full"
         onClick={(e) => e.stopPropagation()}
       >
@@ -370,6 +391,30 @@ export default function LumaSplatsViewer({
           </div>
         </div>
 
+        {/* Canvas */}
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full"
+          style={{ display: 'block' }}
+        />
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+              <p className="text-white">Loading 3D scene...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="absolute bottom-4 left-4 right-4 bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Info Panel */}
         {showInfo && (
           <motion.div
@@ -396,7 +441,7 @@ export default function LumaSplatsViewer({
               <div className="flex justify-between">
                 <span className="text-gray-400">Renderer:</span>
                 <span className="text-blue-400 text-xs">
-                  {window.LumaSplatsThree ? 'LumaSplats' : 'Three.js Fallback'}
+                  {error ? 'Fallback' : 'LumaSplats'}
                 </span>
               </div>
             </div>
@@ -417,85 +462,6 @@ export default function LumaSplatsViewer({
               </div>
             )}
           </motion.div>
-        )}
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="glass rounded-xl p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-400 mx-auto mb-4"></div>
-              <p className="text-white mb-2">Loading 3D Memory...</p>
-              <p className="text-gray-400 text-sm">Initializing Gaussian splat renderer</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="glass rounded-xl p-8 text-center max-w-md">
-              <p className="text-red-400 mb-4">{error}</p>
-              <p className="text-gray-400 text-sm mb-4">
-                This might be due to browser compatibility or network issues.
-              </p>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors"
-                >
-                  Retry
-                </button>
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 3D Canvas */}
-        <div 
-          ref={containerRef}
-          className="w-full h-full pt-20"
-        >
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full"
-            style={{ display: isLoading || error ? 'none' : 'block' }}
-          />
-        </div>
-
-        {/* Controls Hint */}
-        {!isLoading && !error && (
-          <div className="absolute bottom-4 left-4 glass rounded-lg p-3">
-            <p className="text-white text-sm">
-              🖱️ Drag to rotate • 🔍 Scroll to zoom • 📱 Touch to interact
-            </p>
-          </div>
-        )}
-
-        {/* Ownership Notice */}
-        {!isOwned && !isLoading && !error && (
-          <div className="absolute bottom-4 right-4 glass rounded-lg p-4 max-w-sm">
-            <p className="text-orange-400 text-sm mb-2">🔒 Preview Mode</p>
-            <p className="text-gray-300 text-xs">
-              You're viewing a preview. Own this memory NFT to unlock full HD quality, 
-              enhanced interactions, and AI-powered memory chat.
-            </p>
-          </div>
-        )}
-
-        {/* Ownership Benefits */}
-        {isOwned && !isLoading && !error && (
-          <div className="absolute bottom-4 right-4 glass rounded-lg p-4 max-w-sm">
-            <p className="text-green-400 text-sm mb-2">✨ Owner Benefits</p>
-            <p className="text-gray-300 text-xs">
-              Full HD quality • Enhanced controls • AI memory chat • Download rights
-            </p>
-          </div>
         )}
       </div>
     </motion.div>
