@@ -1,125 +1,116 @@
 # 🧠 Memora – Meet Me in a Memory
 
-> “A way for people to meet me — at a moment in time, in the place I was, as I was.”
+> A way for people to meet me — at a moment in time, in the place I was, as I was.
 
-**Memora** is your personal memory capsule.  
-You don’t just upload a file — you preserve an experience.  
-Others can revisit it. And your future self — or your AI — can remember it.
+Memora is a Web3-powered memory capsule that lets users preserve real moments in time through 3D reconstructed video, permanent decentralized storage, and human verification. Built on top of World ID, Filecoin, and Blockscout, Memora enables verified memories to live on-chain and be recalled, explored, and queried forever.
 
 ---
 
 ## 🌐 What Is Memora?
 
-Memora lets real humans record and preserve memories that are:
+Memora lets users:
 
-- Authenticated with a real-world identity (World ID)  
-- Rendered in immersive 3D (via Gaussian Splatting)  
-- Stored permanently on decentralized infrastructure (Filecoin)  
-- Verifiably linked to the person and time (on-chain via Blockscout)
-
-> Not just a journal. Not just an NFT.  
-> A moment — **anchored in time, space, and identity**.
-
----
-
-## 🧭 How It Works
-
-### 👤 For Users
-
-1. **Visit the Memora website**  
-2. **Log in using World App (World ID)**  
-3. **Upload your memory**  
-   - A short video  
-   - A journal note: where, what, how you felt  
-4. **Scene is recreated** *(optional)*  
-   - 3D Gaussian Splat generated from your video  
-5. **Your memory is stored**  
-   - Uploaded to Filecoin via Lighthouse  
-   - 3D scene + text bundled and pinned  
-6. **Logged on-chain**  
-   - Filecoin CID and your wallet logged via smart contract  
-7. **Revisit your memories**  
-   - Return to Memora to replay your experiences  
-8. **Talk to your AI twin** *(future)*  
-   - Ask: “What was I doing in spring 2025?”
+* Upload a short **video** + **contextual journal**
+* Reconstruct the moment as a **3D Gaussian Splat**
+* Authenticate as a **real person** using World ID
+* Store the experience **permanently** via Filecoin
+* Log its presence **on-chain** and make it **verifiable**
+* Talk to an **AI twin** trained on your memories
 
 ---
 
-### 🛠 For Developers (Technical Flow)
+## 🔄 User Flow
 
-| Step | Layer             | Tech / Stack                                        |
-|------|-------------------|------------------------------------------------------|
-| 1    | Auth              | `@worldcoin/minikit` (`getUser()`) for World ID     |
-| 2    | Upload            | `Next.js` frontend, `Node.js` API handler           |
-| 3    | 3D Conversion     | Offline Gaussian Splatting tool (e.g. PyTorch)      |
-| 4    | Bundling          | Combine `.splat` file + `.json` metadata            |
-| 5    | Storage           | `@lighthouse-web3/sdk` → Filecoin + deal receipt    |
-| 6    | On-chain Logging  | `MemoryLogger.sol` logs CID + sender (World Chain)  |
-| 7    | Feedback          | `@blockscout/sdk` for TX status + explorer links    |
-| 8    | AI Search (*)     | RAG-style local embedding search over memory text   |
-
-\* AI interaction is a future feature, not part of current MVP.
+1. Visit Memora
+2. Log in with World ID (via MiniKit)
+3. Upload video + journal description
+4. (Optional) Scene is reconstructed as 3D Gaussian Splat
+5. Bundle is stored on Filecoin (via Lighthouse)
+6. CID is logged on-chain via smart contract
+7. User can revisit the memory or query it with AI later
 
 ---
 
-## 🏆 Hackathon Track Submissions
+## 💡 Key Technologies
 
-### 🌍 World App – **Best Mini App**
-
-- Uses MiniKit SDK (`getUser`) for verified human identity  
-- Associates memory with unique real person  
-✅ Fully qualified
-
-### 📁 Protocol Labs – **Fair Data Economy (Filecoin)**
-
-- Uploads human-authenticated content to Filecoin via Lighthouse  
-- Ensures data provenance, permanence, and transparency  
-✅ Fully qualified
-
-### 🔍 Blockscout – **SDK & Explorer Prize**
-
-- Logs memory CID on-chain via contract  
-- Displays TX confirmation with Blockscout SDK  
-- All explorer links use Blockscout  
-✅ Fully qualified
+| Layer       | Tech Used                          |
+| ----------- | ---------------------------------- |
+| Identity    | World App + MiniKit SDK            |
+| Storage     | Filecoin (via Lighthouse SDK)      |
+| On-chain    | World Chain + Blockscout SDK       |
+| Frontend    | Next.js, Node.js                   |
+| Scene Gen   | Gaussian Splatting (offline)       |
+| AI (future) | RAG over embedded journal metadata |
 
 ---
 
-## ✨ Taglines
+## 🏆 Hackathon Tracks
 
-> **Memora** – Meet me in a memory  
-> **Memora** – Build your digital twin, one moment at a time  
-> **Memora** – Your presence, stored for the future
+### 🌍 World App
+
+* Verified user identity with MiniKit
+* Secure real-human memory linkage
+
+### 📁 Protocol Labs / Filecoin
+
+* Permanent memory storage via Lighthouse
+* Memory provenance and CID on-chain
+
+### 🔍 Blockscout
+
+* Live TX visibility with SDK
+* Human-readable memory provenance
 
 ---
 
-## 📂 Project Structure
+## ✨ Why It Matters
+
+Memora preserves not just files, but presence:
+
+* Who you were
+* What you saw
+* Where you stood
+* How you felt
+
+Stored forever, verified on-chain, and ready for AI to learn from.
+
+> Build your digital twin, one memory at a time.
+
+---
+
+## 🔍 Project Structure
 
 ```
 /pages
-    upload.tsx ← Upload UI + World ID login
+  upload.tsx       ← Upload UI + World ID login
 /api
-    upload.ts ← Filecoin upload handler
+  upload.ts        ← Filecoin upload handler
 /lib
-    world.ts ← MiniKit helper
-    blockscout.ts ← TX confirmation UI
+  world.ts         ← MiniKit helper
+  blockscout.ts    ← TX confirmation UI
 /contracts
-    MemoryLogger.sol ← On-chain CID logger
+  MemoryLogger.sol ← On-chain CID logger
 ```
 
+---
+
+## 🚀 Coming Next
+
+* Public profiles and memory galleries
+* Enhanced scene customization
+* AI memory search and timeline playback
+* On-chain memory linking between friends/family
 
 ---
 
-## 🧪 Built With
+## 🌟 Taglines
 
-- `Next.js`  
-- `Worldcoin MiniKit SDK`  
-- `Lighthouse SDK` (Filecoin)  
-- `Blockscout SDK`  
-- `Solidity` (deployed to World Chain)  
-- Optional: `PyTorch` for Gaussian Splatting
+> Memora – Meet me in a memory.
+> Memora – Your presence, preserved.
+> Memora – A memory worth remembering.
 
 ---
 
+## 📜 License
 
-> **Memora – Where real humans preserve real memories.**
+MIT
