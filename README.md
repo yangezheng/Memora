@@ -9,8 +9,28 @@
 - ✍️ Upload your memory (video + text)
 - 🧊 Convert to a 3D Gaussian Splat
 - 🧾 Store the `.ply` and metadata to IPFS (via Lighthouse)
-- 🪙 Mint an NFT with the memory’s CID
+- 🪙 Mint an NFT with the memory's CID
 - 🔗 Anyone can see the 3D scene, only the NFT owner can unlock the full context (AI chat, metadata, etc.)
+
+---
+
+## 🎮 Demo Features
+
+### 🔐 NFT Ownership Experience
+When you connect your wallet to the Memora frontend, you'll experience:
+
+- **🎉 Automatic Ownership**: The first memory (Zion National Park) becomes yours for demo purposes
+- **👑 Visual Indicators**: Owned memories show crown icons and "YOURS"/"OWNED" badges
+- **🔒 Preview Mode**: Non-owned memories show lock icons and "Preview" labels
+- **✨ Different Access Levels**: 
+  - **Owned NFTs**: Full HD 3D quality, enhanced controls, AI chat access
+  - **Non-owned NFTs**: Preview mode with limited quality and features
+
+### 🌟 3D Viewer Experience
+- **LumaSplats Integration**: Real Gaussian splat rendering using Luma AI technology
+- **Ownership-Based Access**: Different viewing experiences based on NFT ownership
+- **Fallback System**: Graceful degradation to Three.js if LumaSplats fails to load
+- **Responsive Controls**: Fullscreen, camera reset, info panels
 
 ---
 

@@ -13,6 +13,14 @@ interface LumaSplatsViewerProps {
   isOwned: boolean
 }
 
+// Declare global types for CDN loaded libraries
+declare global {
+  interface Window {
+    THREE: any
+    LumaSplatsThree: any
+  }
+}
+
 export default function LumaSplatsViewer({ 
   isOpen, 
   onClose, 
@@ -38,32 +46,21 @@ export default function LumaSplatsViewer({
     let splat: any
     let animationId: number
 
-    const initLumaSplats = async () => {
+    const loadScriptsAndInitialize = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
         const canvas = canvasRef.current!
 
-        // Load Three.js from CDN
-        const script1 = document.createElement('script')
-        script1.type = 'importmap'
-        script1.textContent = JSON.stringify({
-          imports: {
-            "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/",
-            "@lumaai/luma-web": "https://unpkg.com/@lumaai/luma-web@0.2.0/dist/library/luma-web.module.js"
-          }
-        })
-        document.head.appendChild(script1)
+        // Load Three.js and LumaSplats from CDN
+        await loadCDNScripts()
 
-        // Wait a bit for the importmap to be processed
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        // Dynamically import the modules
-        const THREE = await import('three')
-        const { OrbitControls } = await import('three/addons/controls/OrbitControls.js')
-        const { LumaSplatsThree } = await import('@lumaai/luma-web')
+        // Use the globally loaded THREE
+        const THREE = window.THREE
+        if (!THREE) {
+          throw new Error('Failed to load Three.js')
+        }
 
         // Set up WebGL renderer
         renderer = new THREE.WebGLRenderer({
@@ -76,7 +73,7 @@ export default function LumaSplatsViewer({
         scene = new THREE.Scene()
         renderer.setClearColor(new THREE.Color(0xffd1a4), 1)
 
-        // Set up fog like in your HTML
+        // Set up fog like in the original HTML
         scene.fog = new THREE.FogExp2(
           new THREE.Color(0xffd1a4), 
           0.18
@@ -93,21 +90,52 @@ export default function LumaSplatsViewer({
         camera.position.set(0.9, 1.5, -1.0)
 
         // Set up controls
-        controls = new OrbitControls(camera, canvas)
-        controls.enableDamping = true
+        const OrbitControls = window.THREE.OrbitControls || THREE.OrbitControls
+        if (OrbitControls) {
+          controls = new OrbitControls(camera, canvas)
+          controls.enableDamping = true
+        }
 
         // Create LumaSplats object
-        splat = new LumaSplatsThree({
-          source: lumaUrl || 'https://lumalabs.ai/capture/089bc8d0-23e0-4ef7-8a72-d028d0dd86ab'
-        })
+        const LumaSplatsThree = window.LumaSplatsThree
+        if (LumaSplatsThree) {
+          splat = new LumaSplatsThree({
+            source: lumaUrl || 'https://lumalabs.ai/capture/089bc8d0-23e0-4ef7-8a72-d028d0dd86ab'
+          })
+          scene.add(splat)
+        } else {
+          // Fallback: create a simple placeholder
+          console.warn('LumaSplatsThree not available, using fallback')
+          const geometry = new THREE.SphereGeometry(1, 32, 32)
+          const material = new THREE.MeshPhongMaterial({ 
+            color: isOwned ? 0x00ff00 : 0xff6600,
+            wireframe: true 
+          })
+          splat = new THREE.Mesh(geometry, material)
+          scene.add(splat)
 
-        scene.add(splat)
+          // Add lighting for the fallback
+          const ambientLight = new THREE.AmbientLight(0x404040, 0.6)
+          scene.add(ambientLight)
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+          directionalLight.position.set(1, 1, 1)
+          scene.add(directionalLight)
+        }
+
         sceneRef.current = { renderer, scene, camera, controls, splat }
 
         // Animation loop
         const animate = () => {
           animationId = requestAnimationFrame(animate)
-          controls.update()
+          if (controls) {
+            controls.update()
+          }
+          
+          // Rotate fallback object if needed
+          if (!window.LumaSplatsThree && splat) {
+            splat.rotation.y += 0.005
+          }
+          
           renderer.render(scene, camera)
         }
 
@@ -116,10 +144,12 @@ export default function LumaSplatsViewer({
 
       } catch (err) {
         console.error('Error loading LumaSplats:', err)
-        // Fallback to basic Three.js scene
+        // Final fallback using installed Three.js
         try {
           const THREE = await import('three')
           const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js')
+          
+          const canvas = canvasRef.current!
           
           renderer = new THREE.WebGLRenderer({
             canvas: canvas,
@@ -139,7 +169,7 @@ export default function LumaSplatsViewer({
           // Add a placeholder object
           const geometry = new THREE.SphereGeometry(1, 32, 32)
           const material = new THREE.MeshBasicMaterial({ 
-            color: 0x00ff00,
+            color: isOwned ? 0x00ff00 : 0xff6600,
             wireframe: true 
           })
           const sphere = new THREE.Mesh(geometry, material)
@@ -162,15 +192,18 @@ export default function LumaSplatsViewer({
       }
     }
 
-    initLumaSplats()
+    loadScriptsAndInitialize()
 
     // Handle resize
     const handleResize = () => {
-      if (camera && renderer && canvasRef.current) {
+      if (sceneRef.current && canvasRef.current) {
+        const { camera, renderer } = sceneRef.current
         const canvas = canvasRef.current
-        camera.aspect = canvas.clientWidth / canvas.clientHeight
-        camera.updateProjectionMatrix()
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight, false)
+        if (camera && renderer) {
+          camera.aspect = canvas.clientWidth / canvas.clientHeight
+          camera.updateProjectionMatrix()
+          renderer.setSize(canvas.clientWidth, canvas.clientHeight, false)
+        }
       }
     }
 
@@ -189,13 +222,74 @@ export default function LumaSplatsViewer({
       }
       sceneRef.current = null
     }
-  }, [isOpen, lumaUrl])
+  }, [isOpen, lumaUrl, isOwned])
+
+  // Function to load CDN scripts
+  const loadCDNScripts = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // Check if already loaded
+      if (window.THREE && window.LumaSplatsThree) {
+        resolve()
+        return
+      }
+
+      let scriptsLoaded = 0
+      const totalScripts = 2
+
+      const checkAllLoaded = () => {
+        scriptsLoaded++
+        if (scriptsLoaded >= totalScripts) {
+          resolve()
+        }
+      }
+
+      // Load Three.js
+      if (!window.THREE) {
+        const threeScript = document.createElement('script')
+        threeScript.src = 'https://unpkg.com/three@0.157.0/build/three.min.js'
+        threeScript.onload = () => {
+          // Load OrbitControls
+          const controlsScript = document.createElement('script')
+          controlsScript.src = 'https://unpkg.com/three@0.157.0/examples/js/controls/OrbitControls.js'
+          controlsScript.onload = () => checkAllLoaded()
+          controlsScript.onerror = () => checkAllLoaded() // Continue even if controls fail
+          document.head.appendChild(controlsScript)
+        }
+        threeScript.onerror = () => reject(new Error('Failed to load Three.js'))
+        document.head.appendChild(threeScript)
+      } else {
+        checkAllLoaded()
+      }
+
+      // Load LumaSplats
+      if (!window.LumaSplatsThree) {
+        const lumaScript = document.createElement('script')
+        lumaScript.src = 'https://unpkg.com/@lumaai/luma-web@0.2.0/dist/library/luma-web.umd.js'
+        lumaScript.onload = () => {
+          // LumaSplatsThree should be available as a global
+          if (window.LumaSplatsThree) {
+            checkAllLoaded()
+          } else {
+            console.warn('LumaSplatsThree not found after loading script')
+            checkAllLoaded()
+          }
+        }
+        lumaScript.onerror = () => {
+          console.warn('Failed to load LumaSplats, will use fallback')
+          checkAllLoaded()
+        }
+        document.head.appendChild(lumaScript)
+      } else {
+        checkAllLoaded()
+      }
+    })
+  }
 
   const resetCamera = () => {
     if (sceneRef.current) {
       const { camera, controls } = sceneRef.current
       camera.position.set(0.9, 1.5, -1.0)
-      if (controls.reset) {
+      if (controls && controls.reset) {
         controls.reset()
       }
     }
@@ -297,6 +391,12 @@ export default function LumaSplatsViewer({
                 <span className="text-gray-400">Access:</span>
                 <span className={isOwned ? "text-green-400" : "text-orange-400"}>
                   {isOwned ? "Full Access" : "Preview Only"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Renderer:</span>
+                <span className="text-blue-400 text-xs">
+                  {window.LumaSplatsThree ? 'LumaSplats' : 'Three.js Fallback'}
                 </span>
               </div>
             </div>

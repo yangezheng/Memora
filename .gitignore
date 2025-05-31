@@ -7,3 +7,4 @@ memory-files/ethglobal/gs_ethglobal_filecoin.ply
 .next/cache/*
 .next*
 .env
+.env

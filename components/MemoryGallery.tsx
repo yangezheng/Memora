@@ -31,7 +31,7 @@ const SAMPLE_MEMORIES: Memory[] = [
     emotion: 'Inspired',
     cid: 'QmYx5rJsHFQrWALQsGNHaKqFLR3EXRzM3Mj8A9zQeWvXyZ',
     txHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-    owner: '0x742d35Cc4000000000000000000000000000000',
+    owner: 'USER_WALLET', // This will be replaced with connected wallet for demo
     createdAt: '2024-01-15',
     likes: 42,
     views: 156,
@@ -71,8 +71,8 @@ const SAMPLE_MEMORIES: Memory[] = [
 ]
 
 export default function MemoryGallery() {
-  const [memories, setMemories] = useState<Memory[]>(SAMPLE_MEMORIES)
-  const [filteredMemories, setFilteredMemories] = useState<Memory[]>(SAMPLE_MEMORIES)
+  const [memories, setMemories] = useState<Memory[]>([])
+  const [filteredMemories, setFilteredMemories] = useState<Memory[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedEmotion, setSelectedEmotion] = useState('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -80,6 +80,21 @@ export default function MemoryGallery() {
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null)
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null)
   const [is3DViewerOpen, setIs3DViewerOpen] = useState(false)
+
+  // Initialize memories with connected wallet as owner of first memory for demo
+  useEffect(() => {
+    const initializeMemories = () => {
+      const memoriesWithOwnership = SAMPLE_MEMORIES.map(memory => ({
+        ...memory,
+        owner: memory.owner === 'USER_WALLET' && connectedAddress 
+          ? connectedAddress 
+          : memory.owner
+      }))
+      setMemories(memoriesWithOwnership)
+    }
+
+    initializeMemories()
+  }, [connectedAddress])
 
   // Check wallet connection
   useEffect(() => {
@@ -100,6 +115,24 @@ export default function MemoryGallery() {
     }
 
     checkWalletConnection()
+
+    // Listen for account changes
+    if (typeof window !== 'undefined' && window.ethereum) {
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length > 0) {
+          setConnectedAddress(accounts[0].toLowerCase())
+        } else {
+          setConnectedAddress(null)
+        }
+      }
+
+      const ethereum = window.ethereum
+      ethereum.on('accountsChanged', handleAccountsChanged)
+      
+      return () => {
+        ethereum.removeListener('accountsChanged', handleAccountsChanged)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -182,9 +215,27 @@ export default function MemoryGallery() {
             Explore 3D memories created by the community. Each memory is a unique NFT stored on IPFS.
           </p>
           {connectedAddress && (
-            <p className="text-sm text-green-400 mt-4">
-              ✅ Connected as {formatAddress(connectedAddress)} - You can view your owned memories in full quality
-            </p>
+            <div className="mt-6 p-4 glass rounded-lg max-w-4xl mx-auto">
+              <p className="text-sm text-green-400 mb-2">
+                ✅ Connected as {formatAddress(connectedAddress)}
+              </p>
+              <div className="text-sm text-gray-300 space-y-1">
+                <p>🎉 <strong>Demo Mode:</strong> The first memory (Zion National Park) is now owned by your wallet!</p>
+                <p>👑 <strong>Owned memories</strong> show a crown icon and "OWNED" badge</p>
+                <p>🔒 <strong>Other memories</strong> show a lock icon (preview mode only)</p>
+                <p>🌟 <strong>Click any memory</strong> to view it in 3D - owners get full access, others get preview</p>
+              </div>
+            </div>
+          )}
+          {!connectedAddress && (
+            <div className="mt-6 p-4 bg-orange-500/20 border border-orange-500/30 rounded-lg max-w-2xl mx-auto">
+              <p className="text-orange-400 text-sm mb-2">
+                💡 <strong>Connect your wallet</strong> to see NFT ownership in action!
+              </p>
+              <p className="text-gray-300 text-xs">
+                When connected, you'll own the first memory as a demo and can see the difference between owned vs. non-owned NFT experiences.
+              </p>
+            </div>
           )}
         </motion.div>
 
@@ -279,7 +330,10 @@ export default function MemoryGallery() {
                     {/* Ownership indicator */}
                     {owned && (
                       <div className="absolute top-2 right-2 z-10">
-                        <Crown className="h-5 w-5 text-yellow-400" />
+                        <div className="flex items-center space-x-1 bg-yellow-500/20 backdrop-blur-sm rounded-full px-2 py-1">
+                          <Crown className="h-4 w-4 text-yellow-400" />
+                          <span className="text-xs text-yellow-400 font-semibold">YOURS</span>
+                        </div>
                       </div>
                     )}
 
@@ -291,15 +345,22 @@ export default function MemoryGallery() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <div className="absolute bottom-4 left-4 right-4">
-                          <button className="w-full px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg font-semibold flex items-center justify-center space-x-2">
+                          <button className={`w-full px-4 py-2 backdrop-blur-sm rounded-lg font-semibold flex items-center justify-center space-x-2 ${
+                            owned 
+                              ? 'bg-green-500/30 text-green-300 border border-green-500/50' 
+                              : 'bg-white/20 text-white'
+                          }`}>
                             <Sparkles className="h-4 w-4" />
-                            <span>View 3D Memory</span>
+                            <span>{owned ? 'View Your 3D Memory' : 'Preview 3D Memory'}</span>
                           </button>
                         </div>
                       </div>
                       {!owned && (
                         <div className="absolute top-2 left-2">
-                          <Lock className="h-4 w-4 text-orange-400" />
+                          <div className="flex items-center space-x-1 bg-orange-500/20 backdrop-blur-sm rounded-full px-2 py-1">
+                            <Lock className="h-3 w-3 text-orange-400" />
+                            <span className="text-xs text-orange-400">Preview</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -373,10 +434,14 @@ export default function MemoryGallery() {
                         className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
                       />
                       {owned && (
-                        <Crown className="absolute -top-1 -right-1 h-4 w-4 text-yellow-400" />
+                        <div className="absolute -top-1 -right-1 bg-yellow-500/20 backdrop-blur-sm rounded-full px-1">
+                          <Crown className="h-3 w-3 text-yellow-400" />
+                        </div>
                       )}
                       {!owned && (
-                        <Lock className="absolute top-1 left-1 h-3 w-3 text-orange-400" />
+                        <div className="absolute top-1 left-1 bg-orange-500/20 backdrop-blur-sm rounded-full px-1">
+                          <Lock className="h-3 w-3 text-orange-400" />
+                        </div>
                       )}
                     </div>
                     
