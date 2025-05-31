@@ -160,24 +160,27 @@ export default function VoiceAI({
       }
       setConversation(prev => [...prev, userConversation])
 
-      // Prepare chat messages for API (convert previous messages to text format)
-      const chatMessages: ChatMessage[] = conversation
-        .filter(conv => !conv.isUser || !conv.audio) // Only include text messages
+      // Prepare chat messages for API - keep only the last few text exchanges to maintain context
+      // but don't include audio messages to avoid format issues
+      const recentTextMessages = conversation
+        .filter(conv => !conv.audio) // Only text messages
+        .slice(-4) // Keep last 4 text messages for context
         .map(conv => ({
           role: conv.isUser ? 'user' as const : 'assistant' as const,
           content: conv.message
         }))
 
-      console.log('🔄 Sending audio to Azure OpenAI...')
+      console.log('🔄 Sending audio to Azure OpenAI with context:', recentTextMessages.length, 'previous messages')
 
       // Get AI response with audio
-      const aiResponse = await sendAudioMessage(wavBlob, chatMessages, {
+      const aiResponse = await sendAudioMessage(wavBlob, recentTextMessages, {
         name: memoryName,
         description: memoryDescription,
         isOwned
       })
 
       console.log('✅ AI Response received:', aiResponse.text)
+      console.log('🎵 Audio response present:', !!aiResponse.audio, 'size:', aiResponse.audio?.byteLength || 0)
 
       // Add AI response to conversation
       const aiConversation: Conversation = {
@@ -193,11 +196,15 @@ export default function VoiceAI({
       toast.success('AI responded with audio!')
 
       // Play the audio response if available and voice is enabled
-      if (voiceEnabled && aiResponse.audio) {
+      if (voiceEnabled && aiResponse.audio && aiResponse.audio.byteLength > 0) {
         console.log('🔊 Playing AI audio response')
         await playAudioBuffer(aiResponse.audio)
       } else {
-        console.log('🔇 No audio response or voice disabled')
+        console.log('🔇 No audio response or voice disabled. Audio size:', aiResponse.audio?.byteLength || 0)
+        // If no audio, show a warning
+        if (!aiResponse.audio || aiResponse.audio.byteLength === 0) {
+          toast('No audio in AI response - using text only', { icon: '🔇' })
+        }
       }
 
     } catch (error) {

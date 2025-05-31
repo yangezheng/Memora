@@ -72,8 +72,8 @@ export default function MemoryGallery() {
       // Create fake memory using the ethglobal scene
       const demoMemory: Memory = {
         id: '1',
-        name: 'Zion National Park Adventure',
-        description: 'An incredible hiking experience through the majestic canyons of Zion. The towering red cliffs and pristine wilderness created memories that will last forever.',
+        name: 'EthGlobal at Prauge',
+        description: 'An incredible 3D memory of the ETH Global hackathon in Prague, June 29 - July 1st 2025, with the Protocol Labs team.',
         imageUrl: '/memory-files/ethglobal/ethglobal.png', // Using the ethglobal.png as thumbnail
         sceneUrl: 'https://lumalabs.ai/capture/089bc8d0-23e0-4ef7-8a72-d028d0dd86ab', // Same as index.html
         owner: connectedAddress || '0x742d35Cc6634C0532925a3b8D78ABCC8B5c8a8a4',
