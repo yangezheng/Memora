@@ -1,0 +1,16 @@
+Memory: ETHGlobal Demo Memory
+
+Description: Demo memory for ETHGlobal showcase
+
+Location: ETHGlobal Event
+Emotion: Excited
+Tags: demo, ethglobal, showcase
+
+Created: 2025-05-31
+
+Content:
+This is a demo memory showcasing the Memora platform at ETHGlobal.
+
+---
+This memory was captured and transformed into a 3D NFT using Memora.
+Original video processed into Gaussian splat format for immersive viewing.

@@ -1,9 +1,62 @@
 {
-  "name": "Memory #1",
-  "description": "A 3D memory captured in Prague, May 2025.",
-  "animation_url": "ipfs://bafybeidass7wnoycuw53fpulcxhwwhukuejksv7ab76bun45kid4hkuhny/scene.ply",
+  "name": "ETHGlobal Demo Memory",
+  "description": "Demo memory for ETHGlobal showcase",
+  "image": "ipfs://bafybeidkwdeuue3eopt5do66zdgh2thotow4gcfeag2yczlf2wxzfzcede/preview.png",
+  "animation_url": "ipfs://bafybeidkwdeuue3eopt5do66zdgh2thotow4gcfeag2yczlf2wxzfzcede/scene.ply",
+  "external_url": "https://memora.app/memory/bafybeidkwdeuue3eopt5do66zdgh2thotow4gcfeag2yczlf2wxzfzcede",
   "attributes": [
-    { "trait_type": "Location", "value": "Prague" },
-    { "trait_type": "Emotion", "value": "Nostalgic" }
-  ]
+    {
+      "trait_type": "Location",
+      "value": "ETHGlobal Event"
+    },
+    {
+      "trait_type": "Emotion",
+      "value": "Excited"
+    },
+    {
+      "trait_type": "Type",
+      "value": "3D Memory"
+    },
+    {
+      "trait_type": "Creation Date",
+      "value": "2025-05-31"
+    },
+    {
+      "trait_type": "Format",
+      "value": "Gaussian Splat"
+    },
+    {
+      "trait_type": "Tag",
+      "value": "demo"
+    },
+    {
+      "trait_type": "Tag",
+      "value": "ethglobal"
+    },
+    {
+      "trait_type": "Tag",
+      "value": "showcase"
+    }
+  ],
+  "properties": {
+    "files": [
+      {
+        "uri": "ipfs://bafybeidkwdeuue3eopt5do66zdgh2thotow4gcfeag2yczlf2wxzfzcede/scene.ply",
+        "type": "model/ply"
+      },
+      {
+        "uri": "ipfs://bafybeidkwdeuue3eopt5do66zdgh2thotow4gcfeag2yczlf2wxzfzcede/preview.png",
+        "type": "image/png"
+      },
+      {
+        "uri": "ipfs://bafybeidkwdeuue3eopt5do66zdgh2thotow4gcfeag2yczlf2wxzfzcede/memory.txt",
+        "type": "text/plain"
+      },
+      {
+        "uri": "ipfs://bafybeidkwdeuue3eopt5do66zdgh2thotow4gcfeag2yczlf2wxzfzcede/metadata.json",
+        "type": "application/json"
+      }
+    ],
+    "category": "3D Memory NFT"
+  }
 }
