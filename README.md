@@ -1,116 +1,64 @@
-# 🧠 Memora – Meet Me in a Memory
+# 🧠 Memora
 
-> A way for people to meet me — at a moment in time, in the place I was, as I was.
-
-Memora is a Web3-powered memory capsule that lets users preserve real moments in time through 3D reconstructed video, permanent decentralized storage, and human verification. Built on top of World ID, Filecoin, and Blockscout, Memora enables verified memories to live on-chain and be recalled, explored, and queried forever.
+**Memora** turns personal memories into on-chain 3D scenes you can own, revisit, and share — all secured with NFTs. A memory is uploaded, transformed, stored permanently via IPFS, and tokenized on Ethereum.
 
 ---
 
-## 🌐 What Is Memora?
+## 🚀 What It Does
 
-Memora lets users:
-
-* Upload a short **video** + **contextual journal**
-* Reconstruct the moment as a **3D Gaussian Splat**
-* Authenticate as a **real person** using World ID
-* Store the experience **permanently** via Filecoin
-* Log its presence **on-chain** and make it **verifiable**
-* Talk to an **AI twin** trained on your memories
+- ✍️ Upload your memory (video + text)
+- 🧊 Convert to a 3D Gaussian Splat
+- 🧾 Store the `.ply` and metadata to IPFS (via Lighthouse)
+- 🪙 Mint an NFT with the memory’s CID
+- 🔗 Anyone can see the 3D scene, only the NFT owner can unlock the full context (AI chat, metadata, etc.)
 
 ---
 
-## 🔄 User Flow
+## 🛠 Tech Stack
 
-1. Visit Memora
-2. Log in with World ID (via MiniKit)
-3. Upload video + journal description
-4. Scene is reconstructed as 3D Gaussian Splat
-5. Bundle is stored on Filecoin (via Lighthouse)
-6. CID is logged on-chain via smart contract
-7. User can revisit the memory or query it with AI later
-
----
-
-## 💡 Key Technologies
-
-| Layer       | Tech Used                          |
-| ----------- | ---------------------------------- |
-| Identity    | World App + MiniKit SDK            |
-| Storage     | Filecoin (via Lighthouse SDK)      |
-| On-chain    | World Chain + Blockscout SDK       |
-| Frontend    | Next.js, Node.js                   |
-| Scene Gen   | Gaussian Splatting (offline)       |
-| AI          | RAG over embedded journal metadata |
+| Layer       | Tool / Protocol            |
+|-------------|----------------------------|
+| Frontend    | Next.js, ethers.js         |
+| Storage     | IPFS via Lighthouse SDK    |
+| NFT Minting | Solidity (ERC-721), Foundry |
+| Explorer    | Blockscout (Sepolia)       |
 
 ---
 
-## 🏆 Hackathon Tracks
+## 🎯 Challenge Tracks
 
-### 🌍 World App
+### 🧿 Blockscout Explorer Track — ✅ Qualified
+- Deployed contract on Sepolia
+- Using Blockscout as primary explorer in UI
+- Contract verifiable on Blockscout
+- Plan to show transaction feedback
 
-* Verified user identity with MiniKit
-* Secure real-human memory linkage
-
-### 📁 Protocol Labs / Filecoin
-
-* Permanent memory storage via Lighthouse
-* Memory provenance and CID on-chain
-
-### 🔍 Blockscout
-
-* Live TX visibility with SDK
-* Human-readable memory provenance
+### 🖼 NFT & Tokenization — ✅ Qualified
+- Each memory is minted as an NFT
+- Token contains IPFS CID to access memory content
+- Ownership determines access to full metadata and context
 
 ---
 
-## ✨ Why It Matters
+## 🧪 How It Works (User Flow)
 
-Memora preserves not just files, but presence:
-
-* Who you were
-* What you saw
-* Where you stood
-* How you felt
-
-Stored forever, verified on-chain, and ready for AI to learn from.
-
-> Build your digital twin, one memory at a time.
+1. **User Uploads**: Video + Text
+2. **Backend Processes**: Converts to `.ply`, generates `metadata.json`
+3. **Storage**: Uploads to IPFS via Lighthouse → returns CID
+4. **Smart Contract**: Mints NFT → links to CID
+5. **Access**: NFT holder unlocks context, AI chat, 3D renderer
 
 ---
 
-## 🔍 Project Structure
+## 🧾 Example NFT Metadata
 
-```
-/pages
-  upload.tsx       ← Upload UI + World ID login
-/api
-  upload.ts        ← Filecoin upload handler
-/lib
-  world.ts         ← MiniKit helper
-  blockscout.ts    ← TX confirmation UI
-/contracts
-  MemoryLogger.sol ← On-chain CID logger
-```
-
----
-
-## 🚀 Coming Next
-
-* Public profiles and memory galleries
-* Enhanced scene customization
-* AI memory search and timeline playback
-* On-chain memory linking between friends/family
-
----
-
-## 🌟 Taglines
-
-> Memora – Meet me in a memory.
-> Memora – Your presence, preserved.
-> Memora – A memory worth remembering.
-
----
-
-## 📜 License
-
-MIT
+```json
+{
+  "name": "Memory #42",
+  "description": "Hiking in Zion National Park — sunny, 2024",
+  "animation_url": "ipfs://<CID>/scene.ply",
+  "attributes": [
+    { "trait_type": "location", "value": "Zion" },
+    { "trait_type": "emotion", "value": "Inspired" }
+  ]
+}

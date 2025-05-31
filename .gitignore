@@ -1,0 +1,3 @@
+node_modules/*
+.DS_Store
+memory-files/ethglobal/gs_ethglobal_filecoin.ply
