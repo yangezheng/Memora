@@ -1,3 +1,9 @@
 node_modules/*
 .DS_Store
 memory-files/ethglobal/gs_ethglobal_filecoin.ply
+.env
+
+.env
+.next/cache/*
+.next*
+.env
