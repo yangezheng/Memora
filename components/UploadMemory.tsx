@@ -4,8 +4,6 @@ import React, { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, Camera, FileText, MapPin, Heart, Tag, Loader, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { uploadMemoryToIPFS, getMemoryFileUrls, UploadProgress, UploadResult } from '../lib/ipfs-upload'
-import { MemoryUploadData } from '../lib/metadata'
 
 export default function UploadMemory() {
   const [formData, setFormData] = useState({
@@ -19,8 +17,7 @@ export default function UploadMemory() {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null)
-  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
+  const [uploadResult, setUploadResult] = useState<any>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
   const emotions = ['Happy', 'Excited', 'Peaceful', 'Nostalgic', 'Inspired', 'Grateful', 'Adventurous', 'Romantic', 'Proud', 'Energetic']
@@ -88,87 +85,76 @@ export default function UploadMemory() {
     setUploadResult(null)
 
     try {
-      // Prepare upload data
-      const uploadData: MemoryUploadData = {
-        name: formData.name,
-        description: formData.description,
-        location: formData.location,
-        emotion: formData.emotion,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-        videoFile,
-        textContent: formData.textContent,
-        timestamp: new Date().toISOString().split('T')[0]
+      // Simulate upload process with fake progress
+      toast.loading('Processing video...', { id: 'processing' })
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      toast.loading('Converting to 3D scene...', { id: 'processing' })
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      toast.loading('Generating metadata...', { id: 'processing' })
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      toast.loading('Uploading to IPFS...', { id: 'processing' })
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      toast.dismiss('processing')
+
+      // Generate fake CID and result
+      const fakeCid = 'QmFakeDemo' + Math.random().toString(36).substring(2, 15)
+      const fakeResult = {
+        success: true,
+        cid: fakeCid,
+        ipfsUrl: `ipfs://${fakeCid}`,
+        gatewayUrl: `https://gateway.lighthouse.storage/ipfs/${fakeCid}`,
+        metadataUrl: `ipfs://${fakeCid}/metadata.json`,
+        sceneUrl: `ipfs://${fakeCid}/scene.ply`
       }
 
-      // Upload to IPFS with progress tracking
-      const result = await uploadMemoryToIPFS(uploadData, (progress) => {
-        setUploadProgress(progress)
-        
-        // Show stage-specific toasts
-        if (progress.stage === 'processing' && progress.progress === 20) {
-          toast.loading('Converting video to 3D scene...', { id: 'processing' })
-        } else if (progress.stage === 'uploading' && progress.progress === 80) {
-          toast.dismiss('processing')
-          toast.loading('Uploading to IPFS...', { id: 'uploading' })
-        } else if (progress.stage === 'complete') {
-          toast.dismiss('uploading')
-          toast.success('Upload complete!', { id: 'complete' })
-        } else if (progress.stage === 'error') {
-          toast.dismiss()
-          toast.error(`Upload failed: ${progress.error}`)
+      setUploadResult(fakeResult)
+
+      // Show success notification
+      toast.success(
+        <div>
+          <p className="font-semibold">🎉 Memory NFT Created Successfully!</p>
+          <p className="text-sm text-gray-300 mt-1">
+            Your "{formData.name}" memory has been transformed into a 3D NFT
+          </p>
+          <p className="text-xs text-blue-400 mt-1">
+            CID: {fakeCid.slice(0, 12)}...
+          </p>
+        </div>,
+        { 
+          duration: 5000,
+          style: {
+            background: 'linear-gradient(135deg, #0ea5e9, #d946ef)',
+            color: 'white',
+            border: 'none',
+          }
         }
+      )
+
+      // Reset form
+      setFormData({
+        name: '',
+        description: '',
+        location: '',
+        emotion: 'Happy',
+        tags: '',
+        textContent: ''
       })
-
-      setUploadResult(result)
-
-      if (result.success && result.cid) {
-        toast.success('Memory successfully uploaded to IPFS!')
-        
-        // Get file URLs for display
-        const fileUrls = getMemoryFileUrls(result.cid)
-        console.log('📁 Memory files:', fileUrls)
-        
-        // Reset form
-        setFormData({
-          name: '',
-          description: '',
-          location: '',
-          emotion: 'Happy',
-          tags: '',
-          textContent: ''
-        })
-        setVideoFile(null)
-        
-        // Show success with links
-        toast.success(
-          <div>
-            <p>Memory uploaded! CID: {result.cid.slice(0, 12)}...</p>
-            <button 
-              onClick={() => window.open(result.gatewayUrl, '_blank')}
-              className="text-blue-400 underline text-sm"
-            >
-              View on IPFS Gateway
-            </button>
-          </div>,
-          { duration: 6000 }
-        )
-        
-      } else {
-        throw new Error(result.error || 'Upload failed')
-      }
+      setVideoFile(null)
 
     } catch (error) {
       console.error('Upload error:', error)
-      toast.error(error instanceof Error ? error.message : 'Upload failed')
+      toast.error('Upload failed - please try again')
     } finally {
       setIsUploading(false)
-      setUploadProgress(null)
     }
   }
 
   const resetUpload = () => {
     setUploadResult(null)
-    setUploadProgress(null)
   }
 
   return (
@@ -196,94 +182,49 @@ export default function UploadMemory() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 p-6 glass rounded-xl"
           >
-            {uploadResult.success ? (
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2 text-green-400">
-                  <CheckCircle className="h-6 w-6" />
-                  <h3 className="text-lg font-semibold">Upload Successful!</h3>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 text-green-400">
+                <CheckCircle className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">🎉 NFT Created Successfully!</h3>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-400">IPFS CID:</p>
+                  <p className="font-mono text-blue-400">{uploadResult.cid}</p>
                 </div>
-                
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-400">IPFS CID:</p>
-                    <p className="font-mono text-blue-400">{uploadResult.cid}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Gateway URL:</p>
-                    <a 
-                      href={uploadResult.gatewayUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline flex items-center space-x-1"
-                    >
-                      <span>View Files</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <button
-                    onClick={() => window.open(uploadResult.metadataUrl, '_blank')}
-                    className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors text-sm"
-                  >
-                    View Metadata JSON
-                  </button>
-                  <button
-                    onClick={() => window.open(uploadResult.sceneUrl, '_blank')}
-                    className="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
-                  >
-                    View 3D Scene
-                  </button>
-                  <button
-                    onClick={resetUpload}
-                    className="px-3 py-1 bg-gray-500/20 text-gray-400 rounded-lg hover:bg-gray-500/30 transition-colors text-sm"
-                  >
-                    Upload Another
-                  </button>
+                <div>
+                  <p className="text-gray-400">Memory Name:</p>
+                  <p className="text-green-400">{formData.name}</p>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-red-400">
-                  <AlertCircle className="h-6 w-6" />
-                  <h3 className="text-lg font-semibold">Upload Failed</h3>
-                </div>
-                <p className="text-gray-400">{uploadResult.error}</p>
+
+              <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
+                <p className="text-green-300 text-sm">
+                  ✅ <strong>Demo Success!</strong> Your memory has been processed and would be uploaded to IPFS in production.
+                  The 3D scene, metadata JSON, and all files are ready for NFT minting!
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button
+                  onClick={() => toast.success('Would open metadata JSON in production!')}
+                  className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors text-sm"
+                >
+                  📄 View Metadata JSON
+                </button>
+                <button
+                  onClick={() => toast.success('Would open 3D scene viewer in production!')}
+                  className="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm"
+                >
+                  🎬 View 3D Scene
+                </button>
                 <button
                   onClick={resetUpload}
-                  className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                  className="px-3 py-1 bg-gray-500/20 text-gray-400 rounded-lg hover:bg-gray-500/30 transition-colors text-sm"
                 >
-                  Try Again
+                  📝 Create Another
                 </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* Upload Progress */}
-        {uploadProgress && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-6 glass rounded-xl"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Loader className="h-5 w-5 animate-spin text-blue-400" />
-                <h3 className="text-lg font-semibold">{uploadProgress.message}</h3>
-              </div>
-              
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress.progress}%` }}
-                />
-              </div>
-              
-              <div className="flex justify-between text-sm text-gray-400">
-                <span>Stage: {uploadProgress.stage}</span>
-                <span>{Math.round(uploadProgress.progress)}%</span>
               </div>
             </div>
           </motion.div>
@@ -444,7 +385,7 @@ export default function UploadMemory() {
               {isUploading ? (
                 <>
                   <Loader className="h-5 w-5 animate-spin" />
-                  <span>Processing & Uploading...</span>
+                  <span>Creating 3D Memory NFT...</span>
                 </>
               ) : (
                 <>
@@ -455,8 +396,10 @@ export default function UploadMemory() {
             </button>
 
             <div className="text-center text-sm text-gray-500">
-              <p>Your memory will be processed into a 3D scene and stored permanently on IPFS.</p>
-              <p>The generated metadata will include all details for NFT minting.</p>
+              <p className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3 text-blue-300">
+                🎯 <strong>Demo Mode:</strong> This will simulate the complete memory upload process with a success notification.
+                In production, this would actually upload to IPFS and generate real NFT metadata.
+              </p>
             </div>
           </div>
         </motion.div>
