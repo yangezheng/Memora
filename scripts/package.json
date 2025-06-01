@@ -1,0 +1,32 @@
+{
+  "name": "akave-upload-script",
+  "version": "1.0.0",
+  "description": "Standalone script to upload files to Akave for Protocol Labs Prize qualification",
+  "main": "akave-upload.js",
+  "scripts": {
+    "start": "node akave-upload.js",
+    "upload": "node akave-upload.js",
+    "test-nft": "node blockscout-nft-test.js",
+    "test-connectivity": "node blockscout-nft-test.js --connectivity"
+  },
+  "dependencies": {
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "akave",
+    "filecoin",
+    "ethglobal",
+    "protocol-labs",
+    "decentralized-storage",
+    "blockscout",
+    "nft",
+    "api-testing"
+  ],
+  "author": "Protocol Labs Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 

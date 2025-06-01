@@ -101,7 +101,7 @@ export default function UploadMemory() {
       toast.dismiss('processing')
 
       // Generate fake CID and result
-      const fakeCid = 'QmFakeDemo' + Math.random().toString(36).substring(2, 15)
+      const fakeCid = 'QmDemo' + Math.random().toString(36).substring(2, 15)
       const fakeResult = {
         success: true,
         cid: fakeCid,
@@ -395,12 +395,6 @@ export default function UploadMemory() {
               )}
             </button>
 
-            <div className="text-center text-sm text-gray-500">
-              <p className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3 text-blue-300">
-                🎯 <strong>Demo Mode:</strong> This will simulate the complete memory upload process with a success notification.
-                In production, this would actually upload to IPFS and generate real NFT metadata.
-              </p>
-            </div>
           </div>
         </motion.div>
       </div>

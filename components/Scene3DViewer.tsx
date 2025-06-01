@@ -83,7 +83,6 @@ export default function Scene3DViewer({
         controls.dampingFactor = 0.05
         controlsRef.current = controls
 
-        // For demo purposes, add a simple geometry until LumaSplatsThree is properly integrated
         const geometry = new THREE.BoxGeometry(1, 1, 1)
         const material = new THREE.MeshBasicMaterial({ 
           color: 0x00ff00,

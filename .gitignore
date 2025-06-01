@@ -8,3 +8,4 @@ memory-files/ethglobal/gs_ethglobal_filecoin.ply
 .next*
 .env
 .env
+scripts/node_modules/*
