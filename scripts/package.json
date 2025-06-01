@@ -7,7 +7,9 @@
     "start": "node akave-upload.js",
     "upload": "node akave-upload.js",
     "test-nft": "node blockscout-nft-test.js",
-    "test-connectivity": "node blockscout-nft-test.js --connectivity"
+    "test-connectivity": "node blockscout-nft-test.js --connectivity",
+    "fetch-data": "node flare-data-fetch.js",
+    "test-flare": "node flare-data-fetch.js --test"
   },
   "dependencies": {
     "form-data": "^4.0.0",
@@ -22,7 +24,10 @@
     "decentralized-storage",
     "blockscout",
     "nft",
-    "api-testing"
+    "api-testing",
+    "flare-network",
+    "oracles",
+    "weather-data"
   ],
   "author": "Protocol Labs Team",
   "license": "MIT",

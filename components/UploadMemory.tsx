@@ -385,12 +385,12 @@ export default function UploadMemory() {
               {isUploading ? (
                 <>
                   <Loader className="h-5 w-5 animate-spin" />
-                  <span>Creating 3D Memory NFT...</span>
+                  <span>Creatingr Memory NFT...</span>
                 </>
               ) : (
                 <>
                   <Upload className="h-5 w-5" />
-                  <span>Create 3D Memory NFT</span>
+                  <span>Create Memory NFT</span>
                 </>
               )}
             </button>
